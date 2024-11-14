@@ -32,6 +32,7 @@ class ContractMetaData(BaseModel):
     multiplier: Optional[float] = None
     monthOfContract: Optional[str] = None
     tickSize: Optional[float] = None
+    conId: Optional[int] = None
 
 
 class ContractMetaDataList(BaseModel):
