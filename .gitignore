@@ -1,0 +1,6 @@
+dist
+*.egg-info/
+venv
+__pycache__
+*.log
+.env
