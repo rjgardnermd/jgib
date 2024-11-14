@@ -3,6 +3,6 @@ from .models import (
     InHouseApiModel,
     TickerDto,
     TickerList,
-    ContractMetaData,
-    ContractMetaDataList,
+    QualifiedContractDto,
+    QualifiedContractList,
 )

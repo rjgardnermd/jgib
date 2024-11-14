@@ -1,7 +1,13 @@
-from jgib.models import ContractMetaData, InHouseApiModel, TickerDto
+from jgib.models import (
+    QualifiedContractDto,
+    QualifiedContractList,
+    InHouseApiModel,
+    TickerDto,
+)
 from pydantic import BaseModel
 
-metaData = ContractMetaData(
+metaData = QualifiedContractDto(
+    conId=123,
     symbol="AAPL",
     secType="STK",
     exchange="SMART",
@@ -11,9 +17,6 @@ metaData = ContractMetaData(
 )
 
 print(metaData)
-#     symbol: str
-# secType: str
-# exchange: str
-# multiplier: float = None
-# monthOfContract: str = None
-# tickSize: float = None
+
+tickerDto = TickerDto(conId=123, symbol="AAPL", last=100.0)
+print(tickerDto)

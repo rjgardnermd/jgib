@@ -17,7 +17,7 @@ class InHouseApiModel(BaseModel):
 class TickerDto(BaseModel):
     conId: int
     symbol: Any
-    price: float
+    last: float
     # volume: Any
 
 
@@ -25,15 +25,29 @@ class TickerList(BaseModel):
     tickers: List[TickerDto]
 
 
-class ContractMetaData(BaseModel):
+class QualifiedContractDto(BaseModel):
+    conId: int
     symbol: str
     secType: str
     exchange: str
     multiplier: Optional[float] = None
     monthOfContract: Optional[str] = None
     tickSize: Optional[float] = None
-    conId: Optional[int] = None
 
 
-class ContractMetaDataList(BaseModel):
-    contracts: List[ContractMetaData]
+class QualifiedContractList(BaseModel):
+    contracts: List[QualifiedContractDto]
+
+
+# class ContractMetaData(BaseModel):
+#     symbol: str
+#     secType: str
+#     exchange: str
+#     multiplier: Optional[float] = None
+#     monthOfContract: Optional[str] = None
+#     tickSize: Optional[float] = None
+#     conId: Optional[int] = None
+
+
+# class ContractMetaDataList(BaseModel):
+#     contracts: List[ContractMetaData]
