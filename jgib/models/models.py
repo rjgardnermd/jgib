@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Any, List, Set
+from typing import Any, List, Set, Optional
 
 
 class Message(BaseModel):
@@ -29,9 +29,9 @@ class ContractMetaData(BaseModel):
     symbol: str
     secType: str
     exchange: str
-    multiplier: float = None
-    monthOfContract: str = None
-    tickSize: float = None
+    multiplier: Optional[float] = None
+    monthOfContract: Optional[str] = None
+    tickSize: Optional[float] = None
 
 
 class ContractMetaDataList(BaseModel):
