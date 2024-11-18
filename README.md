@@ -10,7 +10,8 @@ https://medium.com/@joel.barmettler/how-to-upload-your-python-package-to-pypi-65
 - update release version in setup.py (two spots)
 - run the following script with commitMsg and version as params
     ./runToUpdate.sh "commitMsg" "2.0.6"
-- then upgrade the package to test the new version: pip install jgib --upgrade
+- then upgrade the package to test the new version: 
+    pip install jgib --upgrade
 
 
 
