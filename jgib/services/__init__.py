@@ -1,1 +1,1 @@
-from .internalApiClient import InHouseApiModel, InHouseApiClient
+from .internalApiClient import InHouseApiClient

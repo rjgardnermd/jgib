@@ -1,2 +1,2 @@
-from .internalApiClient import InHouseApiClient, InHouseApiModel
+from .internalApiClient import InHouseApiClient
 from .base import WebSocketClient, Threadable
