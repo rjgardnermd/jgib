@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from typing import Any, List, Set, Optional
+from enum import Enum
 
 
 class Message(BaseModel):
@@ -39,15 +40,12 @@ class QualifiedContractList(BaseModel):
     contracts: List[QualifiedContractDto]
 
 
-# class ContractMetaData(BaseModel):
-#     symbol: str
-#     secType: str
-#     exchange: str
-#     multiplier: Optional[float] = None
-#     monthOfContract: Optional[str] = None
-#     tickSize: Optional[float] = None
-#     conId: Optional[int] = None
+class IbClientLifecycleEventType(Enum):
+    CONNECTED = "connected"
+    DISCONNECTED = "disconnected"
+    RECONNECTED = "reconnected"
+    CYCLE_COMPLETE = "cycleComplete"
 
 
-# class ContractMetaDataList(BaseModel):
-#     contracts: List[ContractMetaData]
+class IbClientLifecycleEventDto(BaseModel):
+    event: IbClientLifecycleEventType
