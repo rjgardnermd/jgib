@@ -2,6 +2,7 @@ import asyncio
 import websockets
 from typing import Callable
 from jgmd.logging import FreeTextLogger, LogLevel
+from jgmd.util import exceptionToStr
 
 
 class WebSocketClient:
@@ -13,7 +14,13 @@ class WebSocketClient:
 
     async def connect(self, uri: str):
         """Establish a WebSocket connection and start receiving messages."""
-        self._websocket = await websockets.connect(uri)
+        try:
+            self._websocket = await websockets.connect(uri)
+        except Exception as e:
+            self.logger.logError(
+                lambda: f"Error connecting to WebSocket server. Please ensure the server is running. Full error: \n{exceptionToStr(e)}"
+            )
+            raise
         self.logger.logSuccessful(lambda: "Connected to WebSocket server")
         # Start receiving messages in the background
         self._receive_task = asyncio.create_task(self._receive())

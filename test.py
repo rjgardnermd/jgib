@@ -5,7 +5,7 @@ from jgib.models import (
     TickerDto,
     Env,
 )
-from jgib.services import InHouseApiClient, WebSocketClient
+from jgib.services import WebSocketClient
 from jgmd.util import loadEnv
 from jgmd.logging import FreeTextLogger
 from jgmd.events import getEmitter, handleError
@@ -46,8 +46,8 @@ errorLogger = FreeTextLogger(
 )
 
 
-inHouseApiService = WebSocketClient()
-inHouseApiService.onReceive = onMessageReceived
+inHouseApiService = WebSocketClient(onMessageReceived, debugLogger)
+# inHouseApiService.onReceive = onMessageReceived
 
 
 def onError(eventType: str, data):
