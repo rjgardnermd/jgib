@@ -1,18 +1,20 @@
 import asyncio
 import websockets
 from typing import Callable
+from jgmd.logging import FreeTextLogger, LogLevel
 
 
 class WebSocketClient:
-    def __init__(self):
-        self.on_receive: Callable[[str], None] = None
+    def __init__(self, logger: FreeTextLogger):
+        self.logger = logger
+        self.onReceive: Callable[[str], None] = None
         self._websocket = None
         self._receive_task = None
 
     async def connect(self, uri: str):
         """Establish a WebSocket connection and start receiving messages."""
         self._websocket = await websockets.connect(uri)
-        print("Connected to WebSocket server")
+        self.logger.logSuccessful(lambda: "Connected to WebSocket server")
         # Start receiving messages in the background
         self._receive_task = asyncio.create_task(self._receive())
 
@@ -20,32 +22,32 @@ class WebSocketClient:
         """Send a message through the WebSocket connection."""
         if self._websocket:
             await self._websocket.send(message)
-            print(f"Sent: {message}")
+            self.logger.logDebug(lambda: f"Sent: {message}")
         else:
-            print("WebSocket not connected. Message not sent.")
+            self.logger.logError(lambda: "WebSocket not connected. Message not sent.")
 
     async def close(self):
         """Close the WebSocket connection and cancel the receive task."""
         if self._receive_task:
             self._receive_task.cancel()
             await self._receive_task
-            print("Receive task successfully cancelled.")
+            self.logger.logSuccessful(lambda: "Receive task successfully cancelled.")
         if self._websocket:
             await self._websocket.close()
-            print("WebSocket connection closed.")
+            self.logger.logSuccessful(lambda: "WebSocket connection closed.")
 
     async def _receive(self):
         """Background task to receive messages."""
         try:
             async for message in self._websocket:
-                print(f"Received: {message}")
-                if self.on_receive:
-                    self.on_receive(message)
+                self.logger.logDebug(lambda: f"Received: {message}")
+                if self.onReceive:
+                    self.onReceive(message)
         except asyncio.CancelledError:
-            print("Receiving messages task cancelled.")
+            self.logger.logError(lambda: "Receiving messages task cancelled.")
             raise
         except Exception as e:
-            print(f"Error while receiving messages: {e}")
+            self.logger.logError(lambda: f"Error while receiving messages: {e}")
 
 
 def jbg(message):
@@ -53,10 +55,15 @@ def jbg(message):
 
 
 async def run():
-    client = WebSocketClient()
+    logger = FreeTextLogger(
+        logDirectory="logs",
+        fileName="websocket_client.log",
+        logLevel=LogLevel.DEBUG,
+    )
+    client = WebSocketClient(logger)
     try:
         await client.connect("ws://localhost:8765")
-        client.on_receive = jbg
+        client.onReceive = jbg
         count = 0
         direction = 1  # 1 for counting up, -1 for counting down
 

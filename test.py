@@ -47,7 +47,7 @@ errorLogger = FreeTextLogger(
 
 
 inHouseApiService = WebSocketClient()
-inHouseApiService.on_receive = onMessageReceived
+inHouseApiService.onReceive = onMessageReceived
 
 
 def onError(eventType: str, data):
