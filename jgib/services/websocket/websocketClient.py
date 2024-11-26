@@ -5,9 +5,9 @@ from jgmd.logging import FreeTextLogger, LogLevel
 
 
 class WebSocketClient:
-    def __init__(self, logger: FreeTextLogger):
+    def __init__(self, onReceive: Callable[[str], None], logger: FreeTextLogger):
         self.logger = logger
-        self.onReceive: Callable[[str], None] = None
+        self.onReceive = onReceive
         self._websocket = None
         self._receive_task = None
 
@@ -60,7 +60,7 @@ async def run():
         fileName="websocket_client.log",
         logLevel=LogLevel.DEBUG,
     )
-    client = WebSocketClient(logger)
+    client = WebSocketClient(onReceive=jbg, logger=logger)
     try:
         await client.connect("ws://localhost:8765")
         client.onReceive = jbg

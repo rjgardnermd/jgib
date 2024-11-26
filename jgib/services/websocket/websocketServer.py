@@ -50,4 +50,3 @@ if __name__ == "__main__":
     )
     server = WebSocketServer(logger)
     asyncio.run(server.start("localhost", 8765))
-
