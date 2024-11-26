@@ -5,7 +5,7 @@ from jgib.models import (
     TickerDto,
     Env,
 )
-from jgib.services import InHouseApiClient
+from jgib.services import InHouseApiClient, WebSocketClient
 from jgmd.util import loadEnv
 from jgmd.logging import FreeTextLogger
 from jgmd.events import getEmitter, handleError
@@ -29,8 +29,8 @@ tickerDto = TickerDto(conId=123, symbol="AAPL", last=100.0)
 print(tickerDto)
 
 
-def onMessageReceived(eventType: str, data):
-    print(f"{eventType}: {data}")
+def onMessageReceived(msg: str):
+    print(f"Message received: {msg}")
 
 
 env = loadEnv(Env)
@@ -46,12 +46,8 @@ errorLogger = FreeTextLogger(
 )
 
 
-inHouseApiService = InHouseApiClient(
-    uri=env.internalApiUri,
-    msgReceivedEventType="msgReceived",
-    debugLogger=debugLogger,
-    errorLogger=errorLogger,
-)
+inHouseApiService = WebSocketClient()
+inHouseApiService.onReceive = onMessageReceived
 
 
 def onError(eventType: str, data):
@@ -62,14 +58,20 @@ emitter = getEmitter(
     errorEvent="error",
     onError=onError,
 )
-emitter.on("msgReceived", onMessageReceived)
 
 
 async def runAsync():
-    inHouseApiService.start()
+    await inHouseApiService.connect(
+        uri=env.internalApiUri,
+    )
     # sleep 10 seconds
-    await asyncio.sleep(1000)
-    inHouseApiService.stop()
+    for i in range(1000):
+        print(f"Sleeping for {i} seconds")
+        await inHouseApiService.send(f"This is a msg {i}")
+        await asyncio.sleep(1)
+
+    # await asyncio.sleep(1000)
+    await inHouseApiService.close()
 
 
 asyncio.run(runAsync())
