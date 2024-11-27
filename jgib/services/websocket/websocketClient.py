@@ -49,7 +49,10 @@ class WebSocketClient:
             async for message in self._websocket:
                 self.logger.logDebug(lambda: f"Received: {message}")
                 if self.onReceive:
-                    self.onReceive(message)
+                    if asyncio.iscoroutinefunction(self.onReceive):
+                        await self.onReceive(message)
+                    else:
+                        self.onReceive(message)
         except asyncio.CancelledError:
             self.logger.logError(lambda: "Receiving messages task cancelled.")
             raise
