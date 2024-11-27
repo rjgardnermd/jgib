@@ -23,9 +23,7 @@ class WebSocketServer:
                 # Broadcast the message to all connected clients
                 for client in self.connected_clients:
                     if client != websocket:  # Avoid echoing back to the sender
-                        await client.send(
-                            f"Client {websocket.remote_address} says: {message}"
-                        )
+                        await client.send(message)
         except websockets.exceptions.ConnectionClosed as e:
             self.logger.logSuccessful(
                 lambda: f"Client disconnected: {websocket.remote_address}"
