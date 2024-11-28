@@ -7,7 +7,10 @@ import json
 from ...models import (
     SubscriptionDto,
     BroadcastDto,
-    TickerDto,
+    # TickerDto,
+    TickerList,
+    QualifiedContractList,
+    IbClientLifecycleEventDto,
 )  # Assume your DTOs are in a `models` module
 
 
@@ -32,7 +35,7 @@ class WebSocketServer:
                     if isinstance(parsed_message, SubscriptionDto):
                         await self.handle_subscription(parsed_message, websocket)
                     elif isinstance(parsed_message, BroadcastDto):
-                        await self.handle_broadcast(parsed_message)
+                        await self.handle_broadcast(parsed_message, websocket)
                     else:
                         await websocket.send(
                             json.dumps({"error": "Unknown message type"})
@@ -54,10 +57,17 @@ class WebSocketServer:
         else:
             # should be a BroadcastDto
             channel = data.get("channel", None)
-            if channel == "TickerDto":
-                return TickerDto(**data)
-
-            return BroadcastDto(**data)
+            if channel == "TickerList":
+                return TickerList(**data)
+            elif channel == "QualifiedContractList":
+                return QualifiedContractList(**data)
+            elif channel == "IbClientLifecycleEventDto":
+                return IbClientLifecycleEventDto(**data)
+            else:
+                raise ValueError(
+                    f"Unknown channel type: {channel}. Cannot parse message."
+                )
+            # return BroadcastDto(**data)
 
     async def handle_subscription(self, dto: SubscriptionDto, websocket):
         """Handle subscription and unsubscription requests."""
@@ -86,7 +96,7 @@ class WebSocketServer:
         for channel in list(self.channel_subscriptions.keys()):
             self.unsubscribe_client(channel, websocket)
 
-    async def handle_broadcast(self, dto: BroadcastDto):
+    async def handle_broadcast(self, dto: BroadcastDto, sender):
         """Broadcast a message to all clients subscribed to a specific channel."""
         self.logger.logDebug(lambda: f"Broadcasting message: {dto}")
         channel = dto.channel
@@ -94,6 +104,8 @@ class WebSocketServer:
             self.logger.logDebug(lambda: f"Broadcasting to channel: {channel}")
             for client in self.channel_subscriptions[channel]:
                 try:
+                    if client == sender:
+                        continue
                     await client.send(dto.model_dump_json())
                 except websockets.exceptions.ConnectionClosed:
                     self.unsubscribe_client(channel, client)
