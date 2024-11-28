@@ -65,7 +65,7 @@ def jbg(message):
     print(f"JBG: {message}")
 
 
-async def run():
+async def run(id: str):
     logger = FreeTextLogger(
         logDirectory="logs",
         fileName="websocket_client.log",
@@ -83,7 +83,7 @@ async def run():
         )
         while True:
             # Simulate doing some work
-            print(f"Doing other stuff... Count is {count}")
+            print(f"Client {id}: Count is {count}")
 
             # subscribe to a channel
 
@@ -91,7 +91,7 @@ async def run():
             # await client.send(f"Count: {count}")
 
             # broadcast a message
-            tickerDto = TickerDto(conId=1, symbol="AAPL", last=100.0 + count)
+            tickerDto = TickerDto(conId=1, symbol=f"AAPL_{id}", last=100.0 + count)
             tickerList = TickerList(tickers=[tickerDto])
             await client.send(tickerList.model_dump_json())
             # Adjust count
@@ -108,7 +108,14 @@ async def run():
 
 
 if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser(description="WebSocket client identifier")
+    parser.add_argument(
+        "--id", type=str, required=True, help="Unique identifier for the client"
+    )
+    args = parser.parse_args()
     try:
-        asyncio.run(run())
+        asyncio.run(run(args.id))
     except KeyboardInterrupt:
         print("Program terminated.")
