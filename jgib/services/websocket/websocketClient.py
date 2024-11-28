@@ -3,6 +3,7 @@ import websockets
 from typing import Callable
 from jgmd.logging import FreeTextLogger, LogLevel
 from jgmd.util import exceptionToStr
+from ...models import SubscriptionDto, BroadcastDto, TickerDto
 
 
 class WebSocketClient:
@@ -47,6 +48,7 @@ class WebSocketClient:
         """Background task to receive messages."""
         try:
             async for message in self._websocket:
+                print(f"Received: {message}")
                 self.logger.logDebug(lambda: f"Received: {message}")
                 if self.onReceive:
                     if asyncio.iscoroutinefunction(self.onReceive):
@@ -81,16 +83,26 @@ async def run():
             # Simulate doing some work
             print(f"Doing other stuff... Count is {count}")
 
+            # subscribe to a channel
+            await client.send(
+                SubscriptionDto(
+                    action="subscribe", channel="TickerDto"
+                ).model_dump_json()
+            )
             # Send a message
-            await client.send(f"Count: {count}")
+            # await client.send(f"Count: {count}")
 
+            # broadcast a message
+            await client.send(
+                TickerDto(conId=1, symbol="AAPL", last=100.0).model_dump_json()
+            )
             # Adjust count
             count += direction
             if count == 1_000_000 or count == 0:
                 direction *= -1
 
             # Simulate doing more work
-            await asyncio.sleep(0.5)
+            await asyncio.sleep(1)
     except asyncio.CancelledError:
         print("Main task cancelled.")
     finally:

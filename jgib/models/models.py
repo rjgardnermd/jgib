@@ -3,15 +3,21 @@ from typing import Any, List, Set, Optional
 from enum import Enum
 
 
-# class Message(BaseModel):
-#     text: str
-
-#     def __str__(self):
-#         return self.text
+class SubscriptionAction(Enum):
+    SUBSCRIBE = "subscribe"
+    UNSUBSCRIBE = "unsubscribe"
 
 
-class InHouseApiModel(BaseModel):
-    msgType: str = Field(
+class SubscriptionDto(BaseModel):
+    action: str
+    channel: str
+
+
+# class SubscriptionDtoResponse
+
+
+class BroadcastDto(BaseModel):
+    channel: str = Field(
         default_factory=lambda: None
     )  # Default is None, will be set in __init__
 
@@ -20,21 +26,21 @@ class InHouseApiModel(BaseModel):
         super().__init__(*args, **kwargs)
 
         # Dynamically set msgType to the subclass name
-        self.msgType = self.__class__.__name__
+        self.channel = self.__class__.__name__
 
 
-class TickerDto(InHouseApiModel):
+class TickerDto(BroadcastDto):
     conId: int
     symbol: Any
     last: float
     # volume: Any
 
 
-class TickerList(InHouseApiModel):
+class TickerList(BroadcastDto):
     tickers: List[TickerDto]
 
 
-class QualifiedContractDto(InHouseApiModel):
+class QualifiedContractDto(BroadcastDto):
     conId: int
     symbol: str
     secType: str
@@ -44,7 +50,7 @@ class QualifiedContractDto(InHouseApiModel):
     tickSize: Optional[float] = None
 
 
-class QualifiedContractList(InHouseApiModel):
+class QualifiedContractList(BroadcastDto):
     contracts: List[QualifiedContractDto]
 
 
@@ -55,5 +61,5 @@ class IbClientLifecycleEventType(Enum):
     CYCLE_COMPLETE = "cycleComplete"
 
 
-class IbClientLifecycleEventDto(InHouseApiModel):
+class IbClientLifecycleEventDto(BroadcastDto):
     event: IbClientLifecycleEventType
