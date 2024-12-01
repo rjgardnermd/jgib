@@ -61,50 +61,7 @@ class WebSocketClient:
             self.logger.logError(lambda: f"Error while receiving messages: {e}")
 
 
-def jbg(message):
-    print(f"JBG: {message}")
 
-
-async def run(id: str):
-    logger = FreeTextLogger(
-        logDirectory="logs",
-        fileName="websocket_client.log",
-        logLevel=LogLevel.DEBUG,
-    )
-    client = WebSocketClient(onReceive=jbg, logger=logger)
-    try:
-        await client.connect("ws://localhost:8765")
-        client.onReceive = jbg
-        count = 0
-        direction = 1  # 1 for counting up, -1 for counting down
-
-        await client.send(
-            SubscriptionDto(action="subscribe", channel="TickerList").model_dump_json()
-        )
-        while True:
-            # Simulate doing some work
-            print(f"Client {id}: Count is {count}")
-
-            # subscribe to a channel
-
-            # Send a message
-            # await client.send(f"Count: {count}")
-
-            # broadcast a message
-            tickerDto = TickerDto(conId=1, symbol=f"AAPL_{id}", last=100.0 + count)
-            tickerList = TickerList(tickers=[tickerDto])
-            await client.send(tickerList.model_dump_json())
-            # Adjust count
-            count += direction
-            if count == 1_000_000 or count == 0:
-                direction *= -1
-
-            # Simulate doing more work
-            await asyncio.sleep(1)
-    except asyncio.CancelledError:
-        print("Main task cancelled.")
-    finally:
-        await client.close()
 
 
 if __name__ == "__main__":
@@ -115,6 +72,45 @@ if __name__ == "__main__":
         "--id", type=str, required=True, help="Unique identifier for the client"
     )
     args = parser.parse_args()
+
+    def jbg(message):
+        print(f"JBG: {message}")
+
+
+    async def run(id: str):
+        logger = FreeTextLogger(
+            logDirectory="logs",
+            fileName="websocket_client.log",
+            logLevel=LogLevel.DEBUG,
+        )
+        client = WebSocketClient(onReceive=jbg, logger=logger)
+        try:
+            await client.connect("ws://localhost:8765")
+            client.onReceive = jbg
+            count = 0
+            direction = 1  # 1 for counting up, -1 for counting down
+
+            await client.send(
+                SubscriptionDto(action="subscribe", channel="TickerList").model_dump_json()
+            )
+            while True:
+                print(f"Client {id}: Count is {count}")
+
+                # broadcast a message
+                tickerDto = TickerDto(conId=1, symbol=f"AAPL_{id}", last=100.0 + count)
+                tickerList = TickerList(tickers=[tickerDto])
+                await client.send(tickerList.model_dump_json())
+                # Adjust count
+                count += direction
+                if count == 1_000_000 or count == 0:
+                    direction *= -1
+
+                await asyncio.sleep(1)
+        except asyncio.CancelledError:
+            print("Main task cancelled.")
+        finally:
+            await client.close()
+
     try:
         asyncio.run(run(args.id))
     except KeyboardInterrupt:

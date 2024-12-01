@@ -7,7 +7,6 @@ import json
 from ...models import (
     SubscriptionDto,
     BroadcastDto,
-    # TickerDto,
     TickerList,
     QualifiedContractList,
     IbClientLifecycleEventDto,
@@ -67,7 +66,6 @@ class WebSocketServer:
                 raise ValueError(
                     f"Unknown channel type: {channel}. Cannot parse message."
                 )
-            # return BroadcastDto(**data)
 
     async def handle_subscription(self, dto: SubscriptionDto, websocket):
         """Handle subscription and unsubscription requests."""
