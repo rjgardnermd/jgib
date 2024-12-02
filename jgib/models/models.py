@@ -3,6 +3,13 @@ from typing import Any, List, Set, Optional
 from enum import Enum
 
 
+class Channel(Enum):
+    # TickerDto = "TickerDto"
+    TickerList = "TickerList"
+    # QualifiedContractDto = "QualifiedContractDto"
+    QualifiedContractList = "QualifiedContractList"
+    IbClientLifecycleEventDto = "IbClientLifecycleEventDto"
+
 class SubscriptionAction(Enum):
     SUBSCRIBE = "subscribe"
     UNSUBSCRIBE = "unsubscribe"

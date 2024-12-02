@@ -3,7 +3,7 @@ import websockets
 from typing import Callable
 from jgmd.logging import FreeTextLogger, LogLevel
 from jgmd.util import exceptionToStr
-from ...models import SubscriptionDto, TickerDto, TickerList
+from ...models import SubscriptionDto, TickerDto, TickerList, Channel
 
 
 class WebSocketClient:
@@ -13,6 +13,11 @@ class WebSocketClient:
         self._websocket = None
         self._receive_task = None
 
+    async def subscribe(self, channel: Channel):
+        """Subscribe to a channel."""
+        await self.send(
+            SubscriptionDto(action="subscribe", channel=channel.value).model_dump_json()
+        )
     async def connect(self, uri: str):
         """Establish a WebSocket connection and start receiving messages."""
         try:
@@ -90,9 +95,11 @@ if __name__ == "__main__":
             count = 0
             direction = 1  # 1 for counting up, -1 for counting down
 
-            await client.send(
-                SubscriptionDto(action="subscribe", channel="TickerList").model_dump_json()
-            )
+            # await client.send(
+            #     SubscriptionDto(action="subscribe", channel="TickerList").model_dump_json()
+            # )
+            await client.subscribe(Channel.TickerList)
+            
             while True:
                 print(f"Client {id}: Count is {count}")
 
