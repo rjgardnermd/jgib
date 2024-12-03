@@ -4,11 +4,10 @@ from enum import Enum
 
 
 class Channel(Enum):
-    # TickerDto = "TickerDto"
     TickerList = "TickerList"
-    # QualifiedContractDto = "QualifiedContractDto"
     QualifiedContractList = "QualifiedContractList"
     IbClientLifecycleEventDto = "IbClientLifecycleEventDto"
+
 
 class SubscriptionAction(Enum):
     SUBSCRIBE = "subscribe"
@@ -18,9 +17,6 @@ class SubscriptionAction(Enum):
 class SubscriptionDto(BaseModel):
     action: str
     channel: str
-
-
-# class SubscriptionDtoResponse
 
 
 class BroadcastDto(BaseModel):
@@ -40,7 +36,6 @@ class TickerDto(BroadcastDto):
     conId: int
     symbol: Any
     last: float
-    # volume: Any
 
 
 class TickerList(BroadcastDto):
