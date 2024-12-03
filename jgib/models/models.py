@@ -36,6 +36,7 @@ class TickerDto(BroadcastDto):
     conId: int
     symbol: Any
     last: float
+    startPrice: Optional[float] = None
 
 
 class TickerList(BroadcastDto):
