@@ -37,6 +37,8 @@ class TickerDto(BroadcastDto):
     symbol: Any
     last: float
     startPrice: Optional[float] = None
+    pctDeviation: Optional[float] = None
+    watchlist: Optional[str] = None
 
 
 class TickerList(BroadcastDto):
