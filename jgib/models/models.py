@@ -38,7 +38,6 @@ class TickerDto(BroadcastDto):
     last: float
     startPrice: Optional[float] = None
     pctDeviation: Optional[float] = None
-    watchlist: Optional[str] = None
 
 
 class TickerList(BroadcastDto):
@@ -53,6 +52,7 @@ class QualifiedContractDto(BroadcastDto):
     multiplier: Optional[float] = None
     monthOfContract: Optional[str] = None
     tickSize: Optional[float] = None
+    watchlist: Optional[str] = None
 
 
 class QualifiedContractList(BroadcastDto):
