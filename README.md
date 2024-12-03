@@ -17,3 +17,8 @@ https://medium.com/@joel.barmettler/how-to-upload-your-python-package-to-pypi-65
 
 
 
+
+
+### To test the server and client:
+- python -m jgib.services.websocket.websocketServer
+- python -m jgib.services.websocket.websocketClient --id 1
