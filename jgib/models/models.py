@@ -7,6 +7,7 @@ class Channel(Enum):
     TickerList = "TickerList"
     QualifiedContractList = "QualifiedContractList"
     IbClientLifecycleEventDto = "IbClientLifecycleEventDto"
+    IbClientCommandDto = "IbClientCommandDto"
 
 
 class SubscriptionAction(Enum):
@@ -30,6 +31,14 @@ class BroadcastDto(BaseModel):
 
         # Dynamically set msgType to the subclass name
         self.channel = self.__class__.__name__
+
+
+class IbClientCommandType(Enum):
+    RESET_START_PRICES = "resetStartPrices"
+
+
+class IbClientCommandDto(BroadcastDto):
+    command: IbClientCommandType
 
 
 class TickerDto(BroadcastDto):

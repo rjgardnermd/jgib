@@ -10,6 +10,7 @@ from ...models import (
     TickerList,
     QualifiedContractList,
     IbClientLifecycleEventDto,
+    IbClientCommandDto,
 )  # Assume your DTOs are in a `models` module
 
 
@@ -62,6 +63,8 @@ class WebSocketServer:
                 return QualifiedContractList(**data)
             elif channel == "IbClientLifecycleEventDto":
                 return IbClientLifecycleEventDto(**data)
+            elif channel == "IbClientCommandDto":
+                return IbClientCommandDto(**data)
             else:
                 raise ValueError(
                     f"Unknown channel type: {channel}. Cannot parse message."
