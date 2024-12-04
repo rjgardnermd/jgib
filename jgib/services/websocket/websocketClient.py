@@ -18,6 +18,7 @@ class WebSocketClient:
         await self.send(
             SubscriptionDto(action="subscribe", channel=channel.value).model_dump_json()
         )
+
     async def connect(self, uri: str):
         """Establish a WebSocket connection and start receiving messages."""
         try:
@@ -66,9 +67,6 @@ class WebSocketClient:
             self.logger.logError(lambda: f"Error while receiving messages: {e}")
 
 
-
-
-
 if __name__ == "__main__":
     import argparse
 
@@ -80,7 +78,6 @@ if __name__ == "__main__":
 
     def jbg(message):
         print(f"JBG: {message}")
-
 
     async def run(id: str):
         logger = FreeTextLogger(
@@ -99,7 +96,7 @@ if __name__ == "__main__":
             #     SubscriptionDto(action="subscribe", channel="TickerList").model_dump_json()
             # )
             await client.subscribe(Channel.TickerList)
-            
+
             while True:
                 print(f"Client {id}: Count is {count}")
 
