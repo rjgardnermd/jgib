@@ -2,18 +2,10 @@ import asyncio
 import websockets
 from jgmd.logging import FreeTextLogger, LogLevel
 from pydantic import ValidationError
-from typing import Any
+from typing import Any, Dict
 import json
 from ..models import (
     SubscriptionDto,
-    # TickerDto,
-    TickerList,
-    BroadcastChannel,
-    QualifiedContractList,
-    IbClientEventDto,
-    # IbClientEventType,
-    IbClientCommandDto,
-    BroadcastDto,
     SubscriptionAction,
 )
 
@@ -22,6 +14,14 @@ class WebSocketServer:
     def __init__(self, logger: FreeTextLogger):
         self.logger = logger
         self.channel_subscriptions = {}  # Maps channel names to sets of clients
+
+    async def start(self, host="localhost", port=8765):
+        """Start the WebSocket server."""
+        server = await websockets.serve(self.handle_client, host, port)
+        self.logger.logSuccessful(
+            lambda: f"WebSocket server started on ws://{host}:{port}"
+        )
+        await server.wait_closed()
 
     async def handle_client(self, websocket):
         self.logger.logSuccessful(
@@ -34,16 +34,16 @@ class WebSocketServer:
                     lambda: f"Received message from {websocket.remote_address}: {message}"
                 )
                 try:
-                    # Determine message type and process accordingly
-                    parsed_message = self.parse_message(message)
-                    if isinstance(parsed_message, SubscriptionDto):
-                        await self.handle_subscription(parsed_message, websocket)
-                    elif isinstance(parsed_message, BroadcastDto):
-                        await self.handle_broadcast(parsed_message, websocket)
+                    # Determine whether it's a subscription or a broadcast and process accordingly
+                    data: Dict = json.loads(message)
+                    if "action" in data:
+                        # a SubscriptionDto
+                        subscriptionDto = SubscriptionDto(**data)
+                        await self.handle_subscription(subscriptionDto, websocket)
                     else:
-                        await websocket.send(
-                            json.dumps({"error": "Unknown message type"})
-                        )
+                        # should be a BroadcastDto
+                        channel = data.get("channel")
+                        await self.handle_broadcast(channel, message, websocket)
                 except ValidationError as e:
                     await websocket.send(json.dumps({"error": str(e)}))
         except websockets.exceptions.ConnectionClosed:
@@ -53,26 +53,19 @@ class WebSocketServer:
         finally:
             self.remove_client_from_all_channels(websocket)
 
-    def parse_message(self, message: str) -> Any:
-        """Parse a JSON message and validate its type."""
-        data = json.loads(message)
-        if "action" in data:  # a SubscriptionDto
-            return SubscriptionDto(**data)
-        else:
-            # should be a BroadcastDto
-            channel = data.get("channel", None)
-            if channel == BroadcastChannel.TickerList.value:
-                return TickerList(**data)
-            elif channel == BroadcastChannel.QualifiedContractList.value:
-                return QualifiedContractList(**data)
-            elif channel == BroadcastChannel.IbClientEvent.value:
-                return IbClientEventDto(**data)
-            elif channel == BroadcastChannel.IbClientCommand.value:
-                return IbClientCommandDto(**data)
-            else:
-                raise ValueError(
-                    f"Unknown channel type: {channel}. Cannot parse message."
-                )
+    async def handle_broadcast(self, channel: str, msg: str, sender):
+        """Broadcast a message to all clients subscribed to a specific channel."""
+        self.logger.logDebug(lambda: f"Broadcasting message: {msg}")
+        # channel = msg.channel
+        if channel in self.channel_subscriptions:
+            self.logger.logDebug(lambda: f"Broadcasting to channel: {channel}")
+            for client in self.channel_subscriptions[channel]:
+                try:
+                    if client == sender:
+                        continue
+                    await client.send(msg)
+                except websockets.exceptions.ConnectionClosed:
+                    self.unsubscribe_client(channel, client)
 
     async def handle_subscription(self, dto: SubscriptionDto, websocket):
         """Handle subscription and unsubscription requests."""
@@ -100,28 +93,6 @@ class WebSocketServer:
         """Remove a client from all channel subscriptions."""
         for channel in list(self.channel_subscriptions.keys()):
             self.unsubscribe_client(channel, websocket)
-
-    async def handle_broadcast(self, dto: BroadcastDto, sender):
-        """Broadcast a message to all clients subscribed to a specific channel."""
-        self.logger.logDebug(lambda: f"Broadcasting message: {dto}")
-        channel = dto.channel
-        if channel in self.channel_subscriptions:
-            self.logger.logDebug(lambda: f"Broadcasting to channel: {channel}")
-            for client in self.channel_subscriptions[channel]:
-                try:
-                    if client == sender:
-                        continue
-                    await client.send(dto.model_dump_json())
-                except websockets.exceptions.ConnectionClosed:
-                    self.unsubscribe_client(channel, client)
-
-    async def start(self, host="localhost", port=8765):
-        """Start the WebSocket server."""
-        server = await websockets.serve(self.handle_client, host, port)
-        self.logger.logSuccessful(
-            lambda: f"WebSocket server started on ws://{host}:{port}"
-        )
-        await server.wait_closed()
 
 
 if __name__ == "__main__":

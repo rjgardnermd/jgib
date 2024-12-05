@@ -5,8 +5,6 @@ from jgmd.logging import FreeTextLogger, LogLevel
 from jgmd.util import exceptionToStr
 from ..models import (
     SubscriptionDto,
-    TickerDto,
-    TickerList,
     BroadcastChannel,
     SubscriptionAction,
 )
@@ -77,6 +75,10 @@ class WebSocketClient:
 
 if __name__ == "__main__":
     import argparse
+    from ..models import (
+        TickerDto,
+        TickerList,
+    )
 
     parser = argparse.ArgumentParser(description="WebSocket client identifier")
     parser.add_argument(

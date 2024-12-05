@@ -2,13 +2,6 @@ from pydantic import BaseModel, Field
 from enum import Enum
 
 
-class BroadcastChannel(Enum):
-    TickerList = "TickerList"
-    QualifiedContractList = "QualifiedContractList"
-    IbClientEvent = "IbClientEvent"
-    IbClientCommand = "IbClientCommand"
-
-
 class BroadcastDto(BaseModel):
     channel: str = Field(
         default_factory=lambda: None
