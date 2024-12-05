@@ -4,14 +4,18 @@ from jgmd.logging import FreeTextLogger, LogLevel
 from pydantic import ValidationError
 from typing import Any
 import json
-from ...models import (
+from ..models import (
     SubscriptionDto,
-    BroadcastDto,
+    # TickerDto,
     TickerList,
+    BroadcastChannel,
     QualifiedContractList,
-    IbClientLifecycleEventDto,
+    IbClientEventDto,
+    # IbClientEventType,
     IbClientCommandDto,
-)  # Assume your DTOs are in a `models` module
+    BroadcastDto,
+    SubscriptionAction,
+)
 
 
 class WebSocketServer:
@@ -57,13 +61,13 @@ class WebSocketServer:
         else:
             # should be a BroadcastDto
             channel = data.get("channel", None)
-            if channel == "TickerList":
+            if channel == BroadcastChannel.TickerList.value:
                 return TickerList(**data)
-            elif channel == "QualifiedContractList":
+            elif channel == BroadcastChannel.QualifiedContractList.value:
                 return QualifiedContractList(**data)
-            elif channel == "IbClientLifecycleEventDto":
-                return IbClientLifecycleEventDto(**data)
-            elif channel == "IbClientCommandDto":
+            elif channel == BroadcastChannel.IbClientEvent.value:
+                return IbClientEventDto(**data)
+            elif channel == BroadcastChannel.IbClientCommand.value:
                 return IbClientCommandDto(**data)
             else:
                 raise ValueError(
@@ -72,9 +76,9 @@ class WebSocketServer:
 
     async def handle_subscription(self, dto: SubscriptionDto, websocket):
         """Handle subscription and unsubscription requests."""
-        if dto.action == "subscribe":
+        if dto.action == SubscriptionAction.SUBSCRIBE.value:
             self.subscribe_client(dto.channel, websocket)
-        elif dto.action == "unsubscribe":
+        elif dto.action == SubscriptionAction.UNSUBSCRIBE.value:
             self.unsubscribe_client(dto.channel, websocket)
 
     def subscribe_client(self, channel: str, websocket):
