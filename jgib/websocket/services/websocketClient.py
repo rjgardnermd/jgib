@@ -5,7 +5,7 @@ from jgmd.logging import FreeTextLogger, LogLevel
 from jgmd.util import exceptionToStr
 from ..models import (
     SubscriptionDto,
-    BroadcastChannel,
+    Channel,
     SubscriptionAction,
 )
 
@@ -17,7 +17,7 @@ class WebSocketClient:
         self._websocket = None
         self._receive_task = None
 
-    async def subscribe(self, channel: BroadcastChannel):
+    async def subscribe(self, channel: Channel):
         """Subscribe to a channel."""
         await self.send(
             SubscriptionDto(
@@ -102,7 +102,7 @@ if __name__ == "__main__":
             count = 0
             direction = 1  # 1 for counting up, -1 for counting down
 
-            await client.subscribe(BroadcastChannel.TickerList)
+            await client.subscribe(Channel.TickerList)
 
             while True:
                 print(f"Client {id}: Count is {count}")
