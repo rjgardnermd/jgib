@@ -3,7 +3,11 @@ import websockets
 from typing import Callable
 from jgmd.logging import FreeTextLogger, LogLevel
 from jgmd.util import exceptionToStr
-from ...models import SubscriptionDto, TickerDto, TickerList, Channel
+from ..models import (
+    SubscriptionDto,
+    Channel,
+    SubscriptionAction,
+)
 
 
 class WebSocketClient:
@@ -16,7 +20,9 @@ class WebSocketClient:
     async def subscribe(self, channel: Channel):
         """Subscribe to a channel."""
         await self.send(
-            SubscriptionDto(action="subscribe", channel=channel.value).model_dump_json()
+            SubscriptionDto(
+                action=SubscriptionAction.SUBSCRIBE.value, channel=channel.value
+            ).model_dump_json()
         )
 
     async def connect(self, uri: str):
@@ -69,6 +75,10 @@ class WebSocketClient:
 
 if __name__ == "__main__":
     import argparse
+    from ..models import (
+        TickerDto,
+        TickerList,
+    )
 
     parser = argparse.ArgumentParser(description="WebSocket client identifier")
     parser.add_argument(
@@ -87,14 +97,11 @@ if __name__ == "__main__":
         )
         client = WebSocketClient(onReceive=jbg, logger=logger)
         try:
-            await client.connect("ws://localhost:8765")
+            await client.connect("ws://localhost:8765?token=secret")
             client.onReceive = jbg
             count = 0
             direction = 1  # 1 for counting up, -1 for counting down
 
-            # await client.send(
-            #     SubscriptionDto(action="subscribe", channel="TickerList").model_dump_json()
-            # )
             await client.subscribe(Channel.TickerList)
 
             while True:
