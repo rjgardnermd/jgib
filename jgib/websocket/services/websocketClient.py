@@ -104,7 +104,7 @@ if __name__ == "__main__":
         )
         client = WebSocketClient(onReceive=jbg, logger=logger)
         try:
-            await client.connect("ws://localhost:8765?token=secret")
+            await client.connect("ws://localhost:8765?token=secret1")
             client.onReceive = jbg
             count = 0
             direction = 1  # 1 for counting up, -1 for counting down
