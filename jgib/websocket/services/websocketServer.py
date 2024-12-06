@@ -2,6 +2,8 @@ import asyncio
 import websockets
 
 from websockets.asyncio.server import ServerConnection
+
+# from websockets.http11 import Headers, Request, Response
 from jgmd.logging import FreeTextLogger, LogLevel
 from pydantic import ValidationError
 from typing import Any, Dict, Set
@@ -20,6 +22,26 @@ class WebSocketServer:
             {}
         )  # Maps channel names to sets of clients
         self.secretToken = secretToken
+
+    # async def process_request(
+    #     self, websocket: ServerConnection, request: Request
+    # ) -> Response:
+    #     """Validate token before completing the WebSocket handshake."""
+    #     # Extract the 'token' query string from the WebSocket request path
+    #     query = websocket.request.path.split("?", 1)[-1]
+    #     params = urllib.parse.parse_qs(query)
+    #     token = params.get("token", [None])[0]
+
+    #     if token != self.secretToken:
+    #         # unauthorized client
+    #         self.logger.logError(
+    #             lambda: f"Unauthorized client: {websocket.remote_address}"
+    #         )
+    #         return Response(
+    #             400,
+    #             "Unauthorized/Invalid token",
+    #             Headers([("Content-Type", "text/plain")]),
+    #         )
 
     async def start(self, host="localhost", port=8765):
         """Start the WebSocket server."""
