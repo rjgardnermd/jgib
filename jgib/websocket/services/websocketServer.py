@@ -6,6 +6,7 @@ from jgmd.logging import FreeTextLogger, LogLevel
 from pydantic import ValidationError
 from typing import Any, Dict, Set
 import json
+import urllib.parse
 from ..models import (
     SubscriptionDto,
     SubscriptionAction,
@@ -13,11 +14,12 @@ from ..models import (
 
 
 class WebSocketServer:
-    def __init__(self, logger: FreeTextLogger):
+    def __init__(self, logger: FreeTextLogger, secretToken: str):
         self.logger = logger
         self.channel_subscriptions: Dict[str, Set[ServerConnection]] = (
             {}
         )  # Maps channel names to sets of clients
+        self.secretToken = secretToken
 
     async def start(self, host="localhost", port=8765):
         """Start the WebSocket server."""
@@ -28,6 +30,20 @@ class WebSocketServer:
         await server.wait_closed()
 
     async def handle_client(self, websocket: ServerConnection):
+        # Extract the 'token' query string from the WebSocket request path
+        query = websocket.request.path.split("?", 1)[-1]
+        params = urllib.parse.parse_qs(query)
+        token = params.get("token", [None])[0]
+
+        if token != self.secretToken:
+            # unauthorized client
+            self.logger.logDebug(
+                lambda: f"Unauthorized client: {websocket.remote_address}"
+            )
+            await websocket.close(code=4001, reason="Unauthorized")
+            return
+
+        # authorized client
         self.logger.logDebug(lambda: f"New client connected: {websocket.request.path}")
         self.logger.logSuccessful(
             lambda: f"New client connected: {websocket.remote_address}"
@@ -104,5 +120,5 @@ if __name__ == "__main__":
     logger = FreeTextLogger(
         logDirectory="logs", fileName="websocket_server.log", logLevel=LogLevel.DEBUG
     )
-    server = WebSocketServer(logger)
+    server = WebSocketServer(logger, secretToken="secret")
     asyncio.run(server.start("localhost", 8765))
