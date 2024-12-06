@@ -40,11 +40,17 @@ class WebSocketClient:
 
     async def send(self, message: str):
         """Send a message through the WebSocket connection."""
-        if self._websocket:
-            await self._websocket.send(message)
-            self.logger.logDebug(lambda: f"Sent: {message}")
-        else:
-            self.logger.logError(lambda: "WebSocket not connected. Message not sent.")
+        try:
+            if self._websocket:
+                await self._websocket.send(message)
+                self.logger.logDebug(lambda: f"Sent: {message}")
+            else:
+                self.logger.logError(
+                    lambda: "WebSocket not connected. Message not sent."
+                )
+        except Exception as e:
+            self.logger.logError(lambda: f"Error sending message: {e}")
+            raise
 
     async def close(self):
         """Close the WebSocket connection and cancel the receive task."""
@@ -71,6 +77,7 @@ class WebSocketClient:
             raise
         except Exception as e:
             self.logger.logError(lambda: f"Error while receiving messages: {e}")
+            raise
 
 
 if __name__ == "__main__":

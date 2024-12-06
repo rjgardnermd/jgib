@@ -37,14 +37,13 @@ class WebSocketServer:
 
         if token != self.secretToken:
             # unauthorized client
-            self.logger.logDebug(
+            self.logger.logError(
                 lambda: f"Unauthorized client: {websocket.remote_address}"
             )
-            await websocket.close(code=4001, reason="Unauthorized")
+            await websocket.close(code=4001, reason="Unauthorized/Invalid token")
             return
 
         # authorized client
-        self.logger.logDebug(lambda: f"New client connected: {websocket.request.path}")
         self.logger.logSuccessful(
             lambda: f"New client connected: {websocket.remote_address}"
         )
