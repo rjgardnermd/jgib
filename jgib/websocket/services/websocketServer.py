@@ -1,8 +1,10 @@
 import asyncio
 import websockets
+
+from websockets.asyncio.server import ServerConnection
 from jgmd.logging import FreeTextLogger, LogLevel
 from pydantic import ValidationError
-from typing import Any, Dict
+from typing import Any, Dict, Set
 import json
 from ..models import (
     SubscriptionDto,
@@ -13,7 +15,9 @@ from ..models import (
 class WebSocketServer:
     def __init__(self, logger: FreeTextLogger):
         self.logger = logger
-        self.channel_subscriptions = {}  # Maps channel names to sets of clients
+        self.channel_subscriptions: Dict[str, Set[ServerConnection]] = (
+            {}
+        )  # Maps channel names to sets of clients
 
     async def start(self, host="localhost", port=8765):
         """Start the WebSocket server."""
@@ -23,7 +27,8 @@ class WebSocketServer:
         )
         await server.wait_closed()
 
-    async def handle_client(self, websocket):
+    async def handle_client(self, websocket: ServerConnection):
+        self.logger.logDebug(lambda: f"New client connected: {websocket.request.path}")
         self.logger.logSuccessful(
             lambda: f"New client connected: {websocket.remote_address}"
         )
