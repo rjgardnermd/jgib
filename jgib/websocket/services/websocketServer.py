@@ -1,8 +1,6 @@
 import asyncio
 import websockets
 from websockets.asyncio.server import ServerConnection
-
-# from websockets.http11 import Request, Response, Headers
 from jgmd.logging import FreeTextLogger, LogLevel
 from pydantic import ValidationError
 from typing import Any, Dict, Set, List
@@ -11,12 +9,6 @@ from datetime import datetime, timedelta
 import json
 import urllib.parse
 from ..models import SubscriptionDto, SubscriptionAction
-
-
-# def print_full_type(obj):
-#     obj_type = type(obj)
-#     full_type = f"{obj_type.__module__}.{obj_type.__qualname__}"
-#     print(full_type)
 
 
 class WebSocketServer:
@@ -28,22 +20,6 @@ class WebSocketServer:
         self.secretToken = secretToken
         self.maxMessagesPerMinute = maxMessagesPerMinute
         self.message_counts: Dict[ServerConnection, List[datetime]] = defaultdict(list)
-
-    # Commented out process_request for future reference
-    # async def process_request(self, websocket: ServerConnection, request: Request) -> Response:
-    #     """Validate token before completing the WebSocket handshake."""
-    #     print_full_type(request)
-    #     query = websocket.request.path.split("?", 1)[-1]
-    #     params = urllib.parse.parse_qs(query)
-    #     token = params.get("token", [None])[0]
-
-    #     if token != self.secretToken:
-    #         self.logger.logError(lambda: f"Unauthorized client: {websocket.remote_address}")
-    #         return Response(
-    #             400,
-    #             "Unauthorized/Invalid token",
-    #             Headers([("Content-Type", "text/plain")]),
-    #         )
 
     async def start(self, host: str = "localhost", port: int = 8765):
         """Start the WebSocket server."""
@@ -171,5 +147,5 @@ if __name__ == "__main__":
     logger = FreeTextLogger(
         logDirectory="logs", fileName="websocket_server.log", logLevel=LogLevel.DEBUG
     )
-    server = WebSocketServer(logger, secretToken="secret", maxMessagesPerMinute=10)
+    server = WebSocketServer(logger, secretToken="secret", maxMessagesPerMinute=62)
     asyncio.run(server.start("localhost", 8765))
