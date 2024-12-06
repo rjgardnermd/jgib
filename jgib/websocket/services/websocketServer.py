@@ -1,6 +1,7 @@
 import asyncio
 import websockets
 from websockets.asyncio.server import ServerConnection
+from websockets.http11 import Request, Response, Headers
 from jgmd.logging import FreeTextLogger, LogLevel
 from pydantic import ValidationError
 from typing import Any, Dict, Set, List
@@ -21,9 +22,28 @@ class WebSocketServer:
         self.maxMessagesPerMinute = maxMessagesPerMinute
         self.message_counts: Dict[ServerConnection, List[datetime]] = defaultdict(list)
 
+    async def process_request(
+        self, websocket: ServerConnection, request: Request
+    ) -> Response:
+        """Validate token before completing the WebSocket handshake."""
+        query = websocket.request.path.split("?", 1)[-1]
+        params = urllib.parse.parse_qs(query)
+        token = params.get("token", [None])[0]
+        if token != self.secretToken:
+            self.logger.logError(
+                lambda: f"Unauthorized client: {websocket.remote_address}"
+            )
+            return Response(
+                401,
+                "Unauthorized/Invalid token",
+                Headers([("Content-Type", "text/plain")]),
+            )
+
     async def start(self, host: str = "localhost", port: int = 8765):
         """Start the WebSocket server."""
-        server = await websockets.serve(self.handle_client, host, port)
+        server = await websockets.serve(
+            self.handle_client, host, port, process_request=self.process_request
+        )
         self.logger.logSuccessful(
             lambda: f"WebSocket server started on ws://{host}:{port}"
         )
@@ -32,17 +52,17 @@ class WebSocketServer:
     async def handle_client(self, websocket: ServerConnection):
         """Handle WebSocket client connections."""
         # Extract the 'token' query string from the WebSocket request path
-        query = websocket.request.path.split("?", 1)[-1]
-        params = urllib.parse.parse_qs(query)
-        token = params.get("token", [None])[0]
+        # query = websocket.request.path.split("?", 1)[-1]
+        # params = urllib.parse.parse_qs(query)
+        # token = params.get("token", [None])[0]
 
-        if token != self.secretToken:
-            # unauthorized client
-            self.logger.logError(
-                lambda: f"Unauthorized client: {websocket.remote_address}"
-            )
-            await websocket.close(code=4001, reason="Unauthorized/Invalid token")
-            return
+        # if token != self.secretToken:
+        #     # unauthorized client
+        #     self.logger.logError(
+        #         lambda: f"Unauthorized client: {websocket.remote_address}"
+        #     )
+        #     await websocket.close(code=4001, reason="Unauthorized/Invalid token")
+        #     return
 
         # authorized client
         self.logger.logSuccessful(
