@@ -8,13 +8,14 @@ from ..models import (
     Channel,
     SubscriptionAction,
 )
+from websockets.asyncio.client import ClientConnection
 
 
 class WebSocketClient:
     def __init__(self, onReceive: Callable[[str], None], logger: FreeTextLogger):
         self.logger = logger
         self.onReceive = onReceive
-        self._websocket = None
+        self._websocket: ClientConnection = None
         self._receive_task = None
 
     async def subscribe(self, channel: Channel):
@@ -54,11 +55,20 @@ class WebSocketClient:
 
     async def close(self):
         """Close the WebSocket connection and cancel the receive task."""
-        if self._receive_task:
+        # Cancel the receive task if it exists and is still running
+        if self._receive_task and not self._receive_task.done():
             self._receive_task.cancel()
-            await self._receive_task
-            self.logger.logSuccessful(lambda: "Receive task successfully cancelled.")
-        if self._websocket:
+            try:
+                await self._receive_task
+            except asyncio.CancelledError:
+                pass
+            finally:
+                self.logger.logSuccessful(
+                    lambda: "Receive task successfully cancelled."
+                )
+
+        # Close the WebSocket connection if it's open
+        if self._websocket and self._websocket.state <= 1:  # 0 is CONNECTING, 1 is OPEN
             await self._websocket.close()
             self.logger.logSuccessful(lambda: "WebSocket connection closed.")
 

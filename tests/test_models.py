@@ -10,6 +10,7 @@ from jgib.websocket.models.data import (
 from jgib.websocket.models.command import IbClientCommandDto, IbClientCommandType
 from jgib.websocket.models.event import IbClientEventDto, IbClientEventType
 from jgib.websocket.models.request import IbClientRequestDto, IbClientDataRequestType
+from jgib.websocket.models.subscription import SubscriptionDto, SubscriptionAction
 
 
 @pytest.mark.parametrize(
@@ -38,8 +39,8 @@ from jgib.websocket.models.request import IbClientRequestDto, IbClientDataReques
                 "multiplier": 50,
             },
             {
-                "conId": 123,  # Fixed to match init_kwargs
-                "symbol": "ES",  # Fixed to match init_kwargs
+                "conId": 123,
+                "symbol": "ES",
                 "secType": "FUT",
                 "exchange": "CME",
                 "multiplier": 50,
@@ -72,6 +73,12 @@ from jgib.websocket.models.request import IbClientRequestDto, IbClientDataReques
             },
             {"request": "Contracts", "channel": "req@ibClient"},
         ),
+        # SubscriptionDto
+        (
+            SubscriptionDto,
+            {"action": SubscriptionAction.SUBSCRIBE, "channel": "dat@tickers"},
+            {"action": "Subscribe", "channel": "dat@tickers"},
+        ),
     ],
 )
 def test_model_creation(model_cls, init_kwargs, expected_json):
@@ -87,16 +94,12 @@ def test_model_creation(model_cls, init_kwargs, expected_json):
 @pytest.mark.parametrize(
     "model_cls, invalid_kwargs, expected_error_field",
     [
-        # TickerDto
         (TickerDto, {"symbol": "AAPL", "last": 150.0}, "conId"),
-        # QualifiedContractDto
         (QualifiedContractDto, {"symbol": "ES"}, "conId"),
-        # IbClientCommandDto
         (IbClientCommandDto, {"channel": Channel.Command.IbClient}, "command"),
-        # IbClientEventDto
         (IbClientEventDto, {"channel": Channel.Event.IbClient}, "event"),
-        # IbClientRequestDto
         (IbClientRequestDto, {"channel": Channel.Request.IbClient}, "request"),
+        (SubscriptionDto, {"channel": "dat@tickers"}, "action"),
     ],
 )
 def test_invalid_model_data(model_cls, invalid_kwargs, expected_error_field):
@@ -112,3 +115,16 @@ def test_ticker_list_creation():
     assert ticker_list.channel == Channel.Data.Tickers
     assert len(ticker_list.tickers) == 2
     assert ticker_list.tickers[0].symbol == "AAPL"
+
+
+def test_qualified_contract_list_creation():
+    contract1 = QualifiedContractDto(
+        conId=123, symbol="ES", secType="FUT", exchange="CME", multiplier=50
+    )
+    contract2 = QualifiedContractDto(
+        conId=124, symbol="NQ", secType="FUT", exchange="CME", multiplier=20
+    )
+    contract_list = QualifiedContractList.create([contract1, contract2])
+    assert contract_list.channel == Channel.Data.Contracts
+    assert len(contract_list.contracts) == 2
+    assert contract_list.contracts[0].symbol == "ES"

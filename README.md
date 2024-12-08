@@ -18,9 +18,11 @@ https://medium.com/@joel.barmettler/how-to-upload-your-python-package-to-pypi-65
 
 
 
-### To test the models:
+### To test the websocket models:
 python -m pytest tests/
 
+### To test the websocket server and client
+python -m tests.test_websocket
 
 ### To test the server and client:
 - python -m jgib.websocket.services.websocketServer
