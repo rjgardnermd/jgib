@@ -4,12 +4,6 @@ from typing import Union
 import json
 
 
-class MessageType(str, Enum):
-    PUBLISH = "pub"
-    COMMAND = "cmd"
-    REQUEST = "req"
-
-
 class Channel:
     class Data(str, Enum):
         Tickers = "dat@tickers"
@@ -28,7 +22,6 @@ MessageChannel = Union[Channel.Command, Channel.Data]
 
 
 class MessageDto(BaseModel):
-    type: MessageType
     channel: MessageChannel
 
 
@@ -40,7 +33,6 @@ class TickerList(MessageDto):
         return cls(
             tickers=tickers,
             channel=Channel.Data.Tickers,
-            type=MessageType.PUBLISH,
         )
 
 
@@ -53,10 +45,8 @@ def run_tests():
     ticker = TickerList.create(["AAPL", "GOOGL"])
     print("Ticker tickers:", ticker.tickers)
     print("Ticker channel:", ticker.channel)
-    print("Ticker type:", ticker.type)
     assert ticker.channel == Channel.Data.Tickers
     assert ticker.channel.value == "dat@tickers"
-    assert ticker.type == MessageType.PUBLISH
     print("Test 1 Passed\n")
 
     # Test 2: Serialize to JSON
@@ -64,7 +54,6 @@ def run_tests():
     json_data = ticker.model_dump_json()
     print("Serialized JSON:", json_data)
     assert json.loads(json_data) == {
-        "type": "pub",
         "channel": "dat@tickers",
         "tickers": ["AAPL", "GOOGL"],
     }
@@ -73,21 +62,19 @@ def run_tests():
     # Test 3: Deserialize from JSON
     print("Test 3: Deserialize from JSON")
     parsed = TickerList.model_validate_json(
-        '{"type": "pub", "channel": "dat@tickers", "tickers": ["AAPL", "GOOGL"]}'
+        '{"channel": "dat@tickers", "tickers": ["AAPL", "GOOGL"]}'
     )
     print("Parsed TickerList tickers:", parsed.tickers)
     print("Parsed TickerList channel:", parsed.channel)
-    print("Parsed TickerList type:", parsed.type)
     assert parsed.channel == Channel.Data.Tickers
     assert parsed.tickers == ["AAPL", "GOOGL"]
-    assert parsed.type == MessageType.PUBLISH
     print("Test 3 Passed\n")
 
     # Test 4: Validation Error on Invalid Channel
     print("Test 4: Validation Error on Invalid Channel")
     try:
         TickerList.model_validate_json(
-            '{"type": "pub", "channel": "invalid@channel", "tickers": ["AAPL", "GOOGL"]}'
+            '{"channel": "invalid@channel", "tickers": ["AAPL", "GOOGL"]}'
         )
     except ValidationError as e:
         print("Validation Error:", e)
@@ -97,7 +84,7 @@ def run_tests():
     # Test 5: Missing Required Field
     print("Test 5: Missing Required Field")
     try:
-        TickerList.model_validate_json('{"type": "pub", "channel": "dat@tickers"}')
+        TickerList.model_validate_json('{"channel": "dat@tickers"}')
     except ValidationError as e:
         print("Validation Error:", e)
         assert "tickers" in str(e)
@@ -107,23 +94,17 @@ def run_tests():
     print("Test 6: Valid Initialization with Enum Comparison")
     print("Ticker channel:", ticker.channel)
     print("Ticker channel.value:", ticker.channel.value)
-    print("Ticker type:", ticker.type)
     assert ticker.channel == Channel.Data.Tickers
     assert ticker.channel.value == "dat@tickers"
     assert ticker.channel in Channel.Data
-    assert ticker.type == MessageType.PUBLISH
     print("Test 6 Passed\n")
 
     # Test 7: Correctly Handles Union of Channels
     print("Test 7: Correctly Handles Union of Channels")
-    command_message = MessageDto(
-        type=MessageType.COMMAND, channel=Channel.Command.IbClient
-    )
+    command_message = MessageDto(channel=Channel.Command.IbClient)
     print("CommandMessage channel:", command_message.channel)
-    print("CommandMessage type:", command_message.type)
     assert command_message.channel == Channel.Command.IbClient
     assert command_message.channel.value == "cmd@ibClient"
-    assert command_message.type == MessageType.COMMAND
     print("Test 7 Passed\n")
 
     # Test 8: String Comparison with Enum
