@@ -126,22 +126,24 @@ class WebSocketServer:
         self, dto: SubscriptionDto, websocket: ServerConnection
     ):
         """Handle subscription and unsubscription requests."""
-        client_name = self.client_names.get(websocket, "Unknown")
+        # client_name = self.client_names.get(websocket, "Unknown")
         if dto.action == SubscriptionAction.SUBSCRIBE.value:
             self.subscribe_client(dto.channel, websocket)
-            self.logger.logDebug(lambda: f"{client_name} subscribed to {dto.channel}")
+            # self.logger.logDebug(lambda: f"{client_name} subscribed to {dto.channel}")
         elif dto.action == SubscriptionAction.UNSUBSCRIBE.value:
             self.unsubscribe_client(dto.channel, websocket)
-            self.logger.logDebug(
-                lambda: f"{client_name} unsubscribed from {dto.channel}"
-            )
+            # self.logger.logDebug(
+            #     lambda: f"{client_name} unsubscribed from {dto.channel}"
+            # )
 
     def subscribe_client(self, channel: str, websocket: ServerConnection):
         """Add a client to a channel subscription."""
         if channel not in self.channel_subscriptions:
             self.channel_subscriptions[channel] = set()
         self.channel_subscriptions[channel].add(websocket)
-        self.logger.logDebug(lambda: f"Client subscribed to channel: {channel}")
+        self.logger.logDebug(
+            lambda: f"{self.client_names[websocket]} subscribed to {channel}"
+        )
 
     def unsubscribe_client(self, channel: str, websocket: ServerConnection):
         """Remove a client from a channel subscription."""
@@ -149,7 +151,9 @@ class WebSocketServer:
             self.channel_subscriptions[channel].discard(websocket)
             if not self.channel_subscriptions[channel]:
                 del self.channel_subscriptions[channel]
-            self.logger.logDebug(lambda: f"Client unsubscribed from channel: {channel}")
+        self.logger.logDebug(
+            lambda: f"{self.client_names[websocket]} unsubscribed from {channel}"
+        )
 
     def remove_client_from_all_channels(self, websocket: ServerConnection):
         """Remove a client from all channel subscriptions."""

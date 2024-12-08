@@ -28,6 +28,7 @@ class WebSocketClient:
                 action=SubscriptionAction.SUBSCRIBE.value, channel=channel.value
             ).model_dump_json()
         )
+        self.logger.logDebug(lambda: f"{self._name} subscribed to {channel.value}")
 
     async def connect(self, uri: str, token: str):
         """Establish a WebSocket connection and start receiving messages."""
@@ -36,10 +37,11 @@ class WebSocketClient:
             self._websocket = await websockets.connect(uri)
         except Exception as e:
             self.logger.logError(
-                lambda: f"Error connecting to WebSocket server. Please ensure the server is running. Full error: \n{exceptionToStr(e)}"
+                lambda: f"{self._name} Error connecting to WebSocket server. "
+                f"Please ensure the server is running. Full error: \n{exceptionToStr(e)}"
             )
             raise
-        self.logger.logSuccessful(lambda: "Connected to WebSocket server")
+        self.logger.logSuccessful(lambda: f"{self._name} connected to WebSocket server")
         # Start receiving messages in the background
         self._receive_task = asyncio.create_task(self._receive())
 
@@ -48,13 +50,13 @@ class WebSocketClient:
         try:
             if self._websocket:
                 await self._websocket.send(message)
-                self.logger.logDebug(lambda: f"Sent: {message}")
+                self.logger.logDebug(lambda: f"{self._name} sent: {message}")
             else:
                 self.logger.logError(
-                    lambda: "WebSocket not connected. Message not sent."
+                    lambda: f"{self._name} WebSocket not connected. Message not sent."
                 )
         except Exception as e:
-            self.logger.logError(lambda: f"Error sending message: {e}")
+            self.logger.logError(lambda: f"{self._name} Error sending message: {e}")
             raise
 
     async def close(self):
@@ -68,29 +70,35 @@ class WebSocketClient:
                 pass
             finally:
                 self.logger.logSuccessful(
-                    lambda: "Receive task successfully cancelled."
+                    lambda: f"{self._name} Receive task successfully cancelled."
                 )
 
         # Close the WebSocket connection if it's open
         if self._websocket and self._websocket.state <= 1:  # 0 is CONNECTING, 1 is OPEN
             await self._websocket.close()
-            self.logger.logSuccessful(lambda: "WebSocket connection closed.")
+            self.logger.logSuccessful(
+                lambda: f"{self._name} WebSocket connection closed."
+            )
 
     async def _receive(self):
         """Background task to receive messages."""
         try:
             async for message in self._websocket:
-                self.logger.logDebug(lambda: f"{self._name} Received: {message}")
+                self.logger.logDebug(lambda: f"{self._name} received: {message}")
                 if self.onReceive:
                     if asyncio.iscoroutinefunction(self.onReceive):
                         await self.onReceive(message)
                     else:
                         self.onReceive(message)
         except asyncio.CancelledError:
-            self.logger.logError(lambda: "Receiving messages task cancelled.")
+            self.logger.logError(
+                lambda: f"{self._name} Receiving messages task cancelled."
+            )
             raise
         except Exception as e:
-            self.logger.logError(lambda: f"Error while receiving messages: {e}")
+            self.logger.logError(
+                lambda: f"{self._name} Error while receiving messages: {e}"
+            )
             raise
 
 
