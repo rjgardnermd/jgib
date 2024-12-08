@@ -21,23 +21,27 @@ class WebSocketServer:
         self.secretToken = secretToken
         self.maxMessagesPerMinute = maxMessagesPerMinute
         self.message_counts: Dict[ServerConnection, List[datetime]] = defaultdict(list)
+        self.client_names: Dict[ServerConnection, str] = {}  # Store client names
 
     async def process_request(
         self, websocket: ServerConnection, request: Request
     ) -> Response:
-        """Validate token before completing the WebSocket handshake."""
+        """Validate token before completing the WebSocket handshake and capture client name."""
         query = websocket.request.path.split("?", 1)[-1]
         params = urllib.parse.parse_qs(query)
         token = params.get("token", [None])[0]
-        if token != self.secretToken:
+        name = params.get("name", [None])[0]  # Get client name
+        if token != self.secretToken or not name:
             self.logger.logError(
-                lambda: f"Unauthorized client: {websocket.remote_address}"
+                lambda: f"Unauthorized or unnamed client: {websocket.remote_address}"
             )
             return Response(
                 401,
-                "Unauthorized/Invalid token",
+                "Unauthorized/Invalid token or missing client name",
                 Headers([("Content-Type", "text/plain")]),
             )
+        # Store client name
+        self.client_names[websocket] = name
 
     async def start(self, host: str = "localhost", port: int = 8765):
         """Start the WebSocket server."""
@@ -51,42 +55,40 @@ class WebSocketServer:
 
     async def handle_client(self, websocket: ServerConnection):
         """Handle WebSocket client connections."""
-        # client must be authorized by now because of the process_request method
+        client_name = self.client_names.get(websocket, "Unknown")
         self.logger.logSuccessful(
-            lambda: f"New client connected: {websocket.remote_address}"
+            lambda: f"New client connected: {client_name} ({websocket.remote_address})"
         )
 
         try:
             async for message in websocket:
                 if not self.allow_message(websocket):
                     self.logger.logError(
-                        lambda: f"Message rate limit exceeded for client: {websocket.remote_address}"
+                        lambda: f"Message rate limit exceeded for client {client_name} ({websocket.remote_address})"
                     )
                     await websocket.close(code=4002, reason="Rate limit exceeded")
                     break
 
                 self.logger.logDebug(
-                    lambda: f"Received message from {websocket.remote_address}: {message}"
+                    lambda: f"Received message from {client_name} ({websocket.remote_address}): {message}"
                 )
                 try:
-                    # Determine whether it's a subscription or a broadcast and process accordingly
                     data: Dict = json.loads(message)
                     if "action" in data:
-                        # a SubscriptionDto
                         subscriptionDto = SubscriptionDto(**data)
                         await self.handle_subscription(subscriptionDto, websocket)
                     else:
-                        # should be a BroadcastDto
                         channel = data.get("channel")
                         await self.handle_broadcast(channel, message, websocket)
                 except ValidationError as e:
                     await websocket.send(json.dumps({"error": str(e)}))
         except websockets.exceptions.ConnectionClosed:
             self.logger.logSuccessful(
-                lambda: f"Client disconnected: {websocket.remote_address}"
+                lambda: f"Client disconnected: {client_name} ({websocket.remote_address})"
             )
         finally:
             self.remove_client_from_all_channels(websocket)
+            self.client_names.pop(websocket, None)  # Clean up client name
             if websocket in self.message_counts:
                 del self.message_counts[websocket]
 
@@ -109,9 +111,9 @@ class WebSocketServer:
 
     async def handle_broadcast(self, channel: str, msg: str, sender: ServerConnection):
         """Broadcast a message to all clients subscribed to a specific channel."""
-        self.logger.logDebug(lambda: f"Broadcasting message: {msg}")
+        sender_name = self.client_names.get(sender, "Unknown")
+        self.logger.logDebug(lambda: f"Broadcasting message from {sender_name}: {msg}")
         if channel in self.channel_subscriptions:
-            self.logger.logDebug(lambda: f"Broadcasting to channel: {channel}")
             for client in self.channel_subscriptions[channel]:
                 try:
                     if client == sender:
@@ -124,10 +126,15 @@ class WebSocketServer:
         self, dto: SubscriptionDto, websocket: ServerConnection
     ):
         """Handle subscription and unsubscription requests."""
+        client_name = self.client_names.get(websocket, "Unknown")
         if dto.action == SubscriptionAction.SUBSCRIBE.value:
             self.subscribe_client(dto.channel, websocket)
+            self.logger.logDebug(lambda: f"{client_name} subscribed to {dto.channel}")
         elif dto.action == SubscriptionAction.UNSUBSCRIBE.value:
             self.unsubscribe_client(dto.channel, websocket)
+            self.logger.logDebug(
+                lambda: f"{client_name} unsubscribed from {dto.channel}"
+            )
 
     def subscribe_client(self, channel: str, websocket: ServerConnection):
         """Add a client to a channel subscription."""

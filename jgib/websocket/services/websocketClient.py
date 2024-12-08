@@ -12,11 +12,14 @@ from websockets.asyncio.client import ClientConnection
 
 
 class WebSocketClient:
-    def __init__(self, onReceive: Callable[[str], None], logger: FreeTextLogger):
+    def __init__(
+        self, onReceive: Callable[[str], None], logger: FreeTextLogger, name: str
+    ):
         self.logger = logger
         self.onReceive = onReceive
         self._websocket: ClientConnection = None
         self._receive_task = None
+        self._name: str = name
 
     async def subscribe(self, channel: Channel):
         """Subscribe to a channel."""
@@ -26,9 +29,10 @@ class WebSocketClient:
             ).model_dump_json()
         )
 
-    async def connect(self, uri: str):
+    async def connect(self, uri: str, token: str):
         """Establish a WebSocket connection and start receiving messages."""
         try:
+            uri = f"{uri}?token={token}&name={self._name}"
             self._websocket = await websockets.connect(uri)
         except Exception as e:
             self.logger.logError(
@@ -76,7 +80,7 @@ class WebSocketClient:
         """Background task to receive messages."""
         try:
             async for message in self._websocket:
-                self.logger.logDebug(lambda: f"Received: {message}")
+                self.logger.logDebug(lambda: f"{self._name} Received: {message}")
                 if self.onReceive:
                     if asyncio.iscoroutinefunction(self.onReceive):
                         await self.onReceive(message)

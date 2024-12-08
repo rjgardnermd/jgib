@@ -15,6 +15,7 @@ from jgmd.logging import FreeTextLogger, LogLevel
 
 testPassed = False
 logger = FreeTextLogger("./logs", "debug.log", LogLevel.DEBUG)
+token = "test_secret"
 
 
 async def main():
@@ -30,7 +31,7 @@ async def main():
             print(f"SUCCESS: {message()}")
 
     # Server setup
-    server = WebSocketServer(logger, secretToken="test_secret", maxMessagesPerMinute=10)
+    server = WebSocketServer(logger, secretToken=token, maxMessagesPerMinute=10)
     server_task = asyncio.create_task(server.start("localhost", 8765))
     await asyncio.sleep(1)  # Allow server to start
 
@@ -40,10 +41,11 @@ async def main():
 
         async def on_receive_client1(message):
             messages_received_client1.append(message)
-            print(f"Client 1 received: {message}")
 
-        client1 = WebSocketClient(onReceive=on_receive_client1, logger=logger)
-        await client1.connect("ws://localhost:8765?token=test_secret")
+        client1 = WebSocketClient(
+            onReceive=on_receive_client1, logger=logger, name="Client1"
+        )
+        await client1.connect("ws://localhost:8765", token=token)
         await client1.subscribe(Channel.Data.Tickers)
 
         # Client 2 setup
@@ -51,22 +53,29 @@ async def main():
 
         async def on_receive_client2(message):
             messages_received_client2.append(message)
-            print(f"Client 2 received: {message}")
 
-        client2 = WebSocketClient(onReceive=on_receive_client2, logger=logger)
-        await client2.connect("ws://localhost:8765?token=test_secret")
+        client2 = WebSocketClient(
+            onReceive=on_receive_client2, logger=logger, name="Client2"
+        )
+        await client2.connect("ws://localhost:8765", token=token)
         await client2.subscribe(Channel.Data.Tickers)
 
         # Client 1 sends a TickerList message
-        ticker_message = TickerList.create(
+        ticker_message_from_1 = TickerList.create(
             [
-                TickerDto(conId=1, symbol="AAPL", last=150.0),
-                TickerDto(conId=2, symbol="GOOGL", last=2800.0),
+                TickerDto(conId=1, symbol="TSLA", last=111.1),
+                TickerDto(conId=2, symbol="MSFT", last=11.11),
             ]
         ).model_dump_json()
-        await client1.send(ticker_message)
-        await client2.send(ticker_message)
-        await client2.send(ticker_message)
+        ticker_message_from_2 = TickerList.create(
+            [
+                TickerDto(conId=1, symbol="AAPL", last=222.2),
+                TickerDto(conId=2, symbol="GOOGL", last=22.22),
+            ]
+        ).model_dump_json()
+        await client1.send(ticker_message_from_1)
+        await client2.send(ticker_message_from_2)
+        await client2.send(ticker_message_from_2)
 
         # Wait briefly for messages to propagate
         await asyncio.sleep(1)
@@ -75,7 +84,7 @@ async def main():
         assert len(messages_received_client2) == 1
         received_message = TickerList.model_validate_json(messages_received_client2[0])
         assert len(messages_received_client1) == 2
-        assert received_message.tickers[0].symbol == "AAPL"
+        assert received_message.tickers[0].symbol == "TSLA"
         assert received_message.channel == "dat@tickers"
 
         global testPassed
