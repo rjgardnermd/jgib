@@ -51,20 +51,7 @@ class WebSocketServer:
 
     async def handle_client(self, websocket: ServerConnection):
         """Handle WebSocket client connections."""
-        # Extract the 'token' query string from the WebSocket request path
-        # query = websocket.request.path.split("?", 1)[-1]
-        # params = urllib.parse.parse_qs(query)
-        # token = params.get("token", [None])[0]
-
-        # if token != self.secretToken:
-        #     # unauthorized client
-        #     self.logger.logError(
-        #         lambda: f"Unauthorized client: {websocket.remote_address}"
-        #     )
-        #     await websocket.close(code=4001, reason="Unauthorized/Invalid token")
-        #     return
-
-        # authorized client
+        # client must be authorized by now because of the process_request method
         self.logger.logSuccessful(
             lambda: f"New client connected: {websocket.remote_address}"
         )

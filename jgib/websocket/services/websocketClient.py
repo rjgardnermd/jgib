@@ -109,14 +109,14 @@ if __name__ == "__main__":
             count = 0
             direction = 1  # 1 for counting up, -1 for counting down
 
-            await client.subscribe(Channel.TickerList)
+            await client.subscribe(Channel.Data.Tickers)
 
             while True:
                 print(f"Client {id}: Count is {count}")
 
                 # broadcast a message
                 tickerDto = TickerDto(conId=1, symbol=f"AAPL_{id}", last=100.0 + count)
-                tickerList = TickerList(tickers=[tickerDto])
+                tickerList = TickerList.create([tickerDto])
                 await client.send(tickerList.model_dump_json())
                 # Adjust count
                 count += direction

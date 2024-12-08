@@ -11,7 +11,6 @@ class Channel:
 
     class Command(str, Enum):
         IbClient = "cmd@ibClient"
-        Notifications = "cmd@notifications"
 
     class Request(str, Enum):
         IbClient = "req@ibClient"
