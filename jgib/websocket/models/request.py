@@ -2,7 +2,7 @@ from enum import Enum
 from .base import Channel, MessageDto
 
 
-class IbClientDataRequestType(Enum):
+class IbClientDataRequestType(str, Enum):
     CONTRACTS = "Contracts"
 
 

@@ -2,7 +2,7 @@ from enum import Enum
 from .base import Channel, MessageDto
 
 
-class IbClientEventType(Enum):
+class IbClientEventType(str, Enum):
     CONNECTED = "Connected"
     DISCONNECTED = "Disconnected"
     RECONNECTED = "Reconnected"

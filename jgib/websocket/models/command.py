@@ -2,7 +2,7 @@ from enum import Enum
 from .base import Channel, MessageDto
 
 
-class IbClientCommandType(Enum):
+class IbClientCommandType(str, Enum):
     RESET_START_PRICES = "ResetStartPrices"
 
 

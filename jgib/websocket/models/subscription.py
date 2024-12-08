@@ -2,7 +2,7 @@ from pydantic import BaseModel
 from enum import Enum
 
 
-class SubscriptionAction(Enum):
+class SubscriptionAction(str, Enum):
     SUBSCRIBE = "Subscribe"
     UNSUBSCRIBE = "Unsubscribe"
 
