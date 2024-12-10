@@ -1,6 +1,10 @@
 from enum import Enum
 from .base import Channel, MessageDto
 
+"""
+ibClient events are sent from ibClient to notify other interested clients of important events, such as ib gateway connection status.
+"""
+
 
 class IbClientEventType(str, Enum):
     CONNECTED = "Connected"

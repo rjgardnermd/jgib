@@ -7,37 +7,36 @@ from jgmd.util import exceptionToStr
 from ..models import SubscriptionDto, Channel, SubscriptionAction, MessageDto
 from websockets.asyncio.client import ClientConnection
 
+"""
+The WebSocket client is responsible for establishing a connection to the WebSocket server, sending messages, and
+receiving messages in the background. It also allows for registering message handlers for specific channels.
+
+All services that need to communicate over the WebSocket should use this client.
+"""
+
 
 class WebSocketClient:
-    def __init__(
-        self,
-        logger: FreeTextLogger,
-        name: str,
-    ):
-        self._logger = logger
+    def __init__(self, logger: FreeTextLogger, name: str):
+        """Initialize the WebSocket client."""
+        self._logger: FreeTextLogger = logger
+        self._name: str = name
         self._websocket: ClientConnection = None
         self._receive_task = None
-        self._name: str = name
         self._messageHandlers: Dict[str, Callable[[Dict], Awaitable[None]]] = {}
 
     def registerMessageHandlers(
         self, handlers: Dict[str, Callable[[Dict], Awaitable[None]]]
     ):
-        """
-        Register handlers for specific message channels.
-        """
+        """Register handlers for specific message channels."""
         self._messageHandlers = handlers
 
     async def subscribeToChannels(self, channels: List[Channel]):
-        """
-        Subscribe to multiple channels in the WebSocket API.
-        """
+        """Subscribe to multiple channels concurrently."""
         tasks = [self.subscribeToChannel(channel) for channel in channels]
         await asyncio.gather(*tasks)
-        # self.logger.logSuccessful(lambda: f"Subscribed to channels: {channels}")
 
     async def subscribeToChannel(self, channel: Channel):
-        """Subscribe to a channel."""
+        """Subscribe to a single channel."""
         await self.send(
             SubscriptionDto(
                 action=SubscriptionAction.SUBSCRIBE.value, channel=channel.value
@@ -65,7 +64,7 @@ class WebSocketClient:
         self._receive_task = asyncio.create_task(self._receive())
 
     async def send(self, dto: MessageDto):
-        """Send a message through the WebSocket connection."""
+        """Send a message over the WebSocket connection."""
         try:
             message = dto.model_dump_json()
             if self._websocket:
@@ -80,8 +79,7 @@ class WebSocketClient:
             raise
 
     async def close(self):
-        """Close the WebSocket connection and cancel the receive task."""
-        # Cancel the receive task if it exists and is still running
+        """Close the WebSocket connection and cancel background tasks."""
         if self._receive_task and not self._receive_task.done():
             self._receive_task.cancel()
             try:
@@ -92,24 +90,21 @@ class WebSocketClient:
                 self._logger.logSuccessful(
                     lambda: f"{self._name} Receive task successfully cancelled."
                 )
-
-        # Close the WebSocket connection if it's open
-        if self._websocket and self._websocket.state <= 1:  # 0 is CONNECTING, 1 is OPEN
+        if self._websocket and self._websocket.state <= 1:  # CONNECTING or OPEN
             await self._websocket.close()
             self._logger.logSuccessful(
                 lambda: f"{self._name} WebSocket connection closed."
             )
 
     async def _receive(self):
-        """Background task to receive messages."""
+        """Background task to receive and handle incoming messages."""
         try:
             async for message in self._websocket:
                 self._logger.logDebug(lambda: f"{self._name} received: {message}")
                 data = json.loads(message)
                 channel = data.get("channel")
-
-                if channel in self._messageHandlers:
-                    handler = self._messageHandlers[channel]
+                handler = self._messageHandlers.get(channel)
+                if handler:
                     if asyncio.iscoroutinefunction(handler):
                         await handler(data)
                     else:
@@ -132,10 +127,7 @@ class WebSocketClient:
 
 if __name__ == "__main__":
     import argparse
-    from ..models import (
-        TickerDto,
-        TickerList,
-    )
+    from ..models import TickerDto, TickerList
 
     parser = argparse.ArgumentParser(description="WebSocket client identifier")
     parser.add_argument(
@@ -145,7 +137,7 @@ if __name__ == "__main__":
     clientId = args.id
 
     def onTicker(message):
-        print(f"JBG: {message}")
+        print(f"Ticker update: {message}")
 
     async def run(id: str):
         logger = FreeTextLogger(
@@ -156,13 +148,9 @@ if __name__ == "__main__":
         client = WebSocketClient(logger=logger, name=f"TestClient_{id}")
         try:
             await client.connect("ws://localhost:8765", token="secret")
-            client.registerMessageHandlers(
-                {
-                    Channel.Data.Tickers: onTicker,
-                }
-            )
+            client.registerMessageHandlers({Channel.Data.Tickers: onTicker})
             count = 0
-            direction = 1  # 1 for counting up, -1 for counting down
+            direction = 1
 
             await client.subscribeToChannel(Channel.Data.Tickers)
 
@@ -173,11 +161,9 @@ if __name__ == "__main__":
                 tickerDto = TickerDto(conId=1, symbol=f"AAPL_{id}", last=100.0 + count)
                 tickerList = TickerList.create([tickerDto])
                 await client.send(tickerList)
-                # Adjust count
                 count += direction
                 if count == 1_000_000 or count == 0:
                     direction *= -1
-
                 await asyncio.sleep(1)
         except asyncio.CancelledError:
             print("Main task cancelled.")

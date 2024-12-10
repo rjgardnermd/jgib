@@ -2,6 +2,10 @@ from typing import Any, List, Set, Optional
 from .base import Channel, MessageDto
 from pydantic import BaseModel
 
+"""
+DTOs for data messages sent through the websocket. For example, tickers and contracts.
+"""
+
 
 class TickerDto(BaseModel):
     conId: int
