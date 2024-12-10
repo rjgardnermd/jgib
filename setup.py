@@ -3,13 +3,13 @@ from setuptools import setup, find_packages
 setup(
     name="jgib",
     packages=find_packages(),  # Automatically finds and includes all submodules in `jgmd`
-    version="6.0.1",
+    version="6.0.2",
     license="MIT",
     description="A general-purpose python package for logging, event-emission, and other common code.",
     author="Jonathan Gardner",
     author_email="rjgardnermd@gardnermoneygrowth.com",
     url="https://github.com/rjgardnermd/jgib",
-    download_url="https://github.com/rjgardnermd/jgib/archive/refs/tags/v6.0.1.tar.gz",
+    download_url="https://github.com/rjgardnermd/jgib/archive/refs/tags/v6.0.2.tar.gz",
     keywords=[
         "PYTHON",
         "IBKR",

@@ -159,8 +159,13 @@ class WebSocketServer:
 
     def remove_client_from_all_channels(self, websocket: ServerConnection):
         """Remove a client from all channel subscriptions."""
-        for channel in list(self.channel_subscriptions.keys()):
-            self.unsubscribe_client(channel, websocket)
+        for channel, subscribers in self.channel_subscriptions.items():
+            if websocket not in subscribers:
+                continue
+            subscribers.remove(websocket)
+            self.logger.logSuccessful(
+                lambda: f"{self.client_names[websocket]} unsubscribed from {channel}"
+            )
 
 
 if __name__ == "__main__":
