@@ -6,7 +6,7 @@ class IbClientDataRequestType(str, Enum):
     CONTRACTS = "Contracts"
 
 
-class IbClientRequestDto(MessageDto):
+class IbClientDataRequestDto(MessageDto):
     request: IbClientDataRequestType
 
     @classmethod

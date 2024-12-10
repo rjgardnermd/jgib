@@ -9,7 +9,10 @@ from jgib.websocket.models.data import (
 )
 from jgib.websocket.models.command import IbClientCommandDto, IbClientCommandType
 from jgib.websocket.models.event import IbClientEventDto, IbClientEventType
-from jgib.websocket.models.request import IbClientRequestDto, IbClientDataRequestType
+from jgib.websocket.models.request import (
+    IbClientDataRequestDto,
+    IbClientDataRequestType,
+)
 from jgib.websocket.models.subscription import SubscriptionDto, SubscriptionAction
 
 
@@ -66,7 +69,7 @@ from jgib.websocket.models.subscription import SubscriptionDto, SubscriptionActi
         ),
         # IbClientRequestDto
         (
-            IbClientRequestDto,
+            IbClientDataRequestDto,
             {
                 "request": IbClientDataRequestType.CONTRACTS,
                 "channel": Channel.Request.IbClient,
@@ -98,7 +101,7 @@ def test_model_creation(model_cls, init_kwargs, expected_json):
         (QualifiedContractDto, {"symbol": "ES"}, "conId"),
         (IbClientCommandDto, {"channel": Channel.Command.IbClient}, "command"),
         (IbClientEventDto, {"channel": Channel.Event.IbClient}, "event"),
-        (IbClientRequestDto, {"channel": Channel.Request.IbClient}, "request"),
+        (IbClientDataRequestDto, {"channel": Channel.Request.IbClient}, "request"),
         (SubscriptionDto, {"channel": "dat@tickers"}, "action"),
     ],
 )
