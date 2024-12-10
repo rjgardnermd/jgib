@@ -42,11 +42,10 @@ async def main():
         async def on_receive_client1(message):
             messages_received_client1.append(message)
 
-        client1 = WebSocketClient(
-            onReceive=on_receive_client1, logger=logger, name="Client1"
-        )
+        client1 = WebSocketClient(logger=logger, name="Client1")
         await client1.connect("ws://localhost:8765", token=token)
-        await client1.subscribe(Channel.Data.Tickers)
+        client1.registerMessageHandlers({Channel.Data.Tickers: on_receive_client1})
+        await client1.subscribeToChannel(Channel.Data.Tickers)
 
         # Client 2 setup
         messages_received_client2 = []
@@ -54,11 +53,10 @@ async def main():
         async def on_receive_client2(message):
             messages_received_client2.append(message)
 
-        client2 = WebSocketClient(
-            onReceive=on_receive_client2, logger=logger, name="Client2"
-        )
+        client2 = WebSocketClient(logger=logger, name="Client2")
         await client2.connect("ws://localhost:8765", token=token)
-        await client2.subscribe(Channel.Data.Tickers)
+        client2.registerMessageHandlers({Channel.Data.Tickers: on_receive_client2})
+        await client2.subscribeToChannel(Channel.Data.Tickers)
 
         # Client 1 sends a TickerList message
         ticker_message_from_1 = TickerList.create(
@@ -66,13 +64,13 @@ async def main():
                 TickerDto(conId=1, symbol="TSLA", last=111.1),
                 TickerDto(conId=2, symbol="MSFT", last=11.11),
             ]
-        ).model_dump_json()
+        )
         ticker_message_from_2 = TickerList.create(
             [
                 TickerDto(conId=1, symbol="AAPL", last=222.2),
                 TickerDto(conId=2, symbol="GOOGL", last=22.22),
             ]
-        ).model_dump_json()
+        )
         await client1.send(ticker_message_from_1)
         await client2.send(ticker_message_from_2)
         await client2.send(ticker_message_from_2)
@@ -82,7 +80,7 @@ async def main():
 
         # Validate that Client 2 receives the message from Client 1
         assert len(messages_received_client2) == 1
-        received_message = TickerList.model_validate_json(messages_received_client2[0])
+        received_message = TickerList(**messages_received_client2[0])
         assert len(messages_received_client1) == 2
         assert received_message.tickers[0].symbol == "TSLA"
         assert received_message.channel == "dat@tickers"

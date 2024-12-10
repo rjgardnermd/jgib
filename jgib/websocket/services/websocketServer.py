@@ -2,7 +2,7 @@ import asyncio
 import websockets
 from websockets.asyncio.server import ServerConnection
 from websockets.http11 import Request, Response, Headers
-from jgmd.logging import FreeTextLogger, LogLevel
+from jgmd.logging import FreeTextLogger, LogLevel, Color
 from pydantic import ValidationError
 from typing import Any, Dict, Set, List
 from collections import defaultdict
@@ -112,7 +112,9 @@ class WebSocketServer:
     async def handle_broadcast(self, channel: str, msg: str, sender: ServerConnection):
         """Broadcast a message to all clients subscribed to a specific channel."""
         sender_name = self.client_names.get(sender, "Unknown")
-        self.logger.logDebug(lambda: f"Broadcasting message from {sender_name}: {msg}")
+        self.logger.logDebug(
+            lambda: f"Broadcasting message from {sender_name}: {msg}", Color.CYAN
+        )
         if channel in self.channel_subscriptions:
             for client in self.channel_subscriptions[channel]:
                 try:
@@ -141,7 +143,7 @@ class WebSocketServer:
         if channel not in self.channel_subscriptions:
             self.channel_subscriptions[channel] = set()
         self.channel_subscriptions[channel].add(websocket)
-        self.logger.logDebug(
+        self.logger.logSuccessful(
             lambda: f"{self.client_names[websocket]} subscribed to {channel}"
         )
 
@@ -151,7 +153,7 @@ class WebSocketServer:
             self.channel_subscriptions[channel].discard(websocket)
             if not self.channel_subscriptions[channel]:
                 del self.channel_subscriptions[channel]
-        self.logger.logDebug(
+        self.logger.logSuccessful(
             lambda: f"{self.client_names[websocket]} unsubscribed from {channel}"
         )
 
